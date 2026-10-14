@@ -12,4 +12,4 @@ Programming: Python
 
 Tools: Git | GitHub | VS Code
 
-📺 **YouTube:** [QODEXA](UCdOwv54m_IgK8LOHK8a1dRQ)
+📺 **YouTube:** [QODEXA](https://youtube.com/@qodexa-9?si=ZWJYFql-pGB-VaZA)
