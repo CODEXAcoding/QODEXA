@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List - Modern Task Manager</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS Styles and Animations -->
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.6);
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: rgba(30, 27, 75, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(124, 58, 237, 0.25);
+        }
+
+        /* Custom Checkbox Animation */
+        .custom-check {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .completed-task .task-text {
+            color: #94a3b8;
+            text-decoration: line-through;
+        }
+
+        .completed-task .custom-check {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Keyframe Entrance Animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-task {
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4 sm:p-6 md:p-10">
+
+    <!-- Toast Notification Box -->
+    <div id="toast" class="fixed top-6 right-6 z-50 transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-3 bg-slate-900/90 border border-violet-500/30 text-white px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-xl text-sm font-semibold">
+        <i data-lucide="info" id="toast-icon" class="w-5 h-5 text-violet-400"></i>
+        <span id="toast-message">Notification message</span>
+    </div>
+
+    <!-- Main Container -->
+    <div class="w-full max-w-lg glass-card rounded-3xl p-6 sm:p-8 my-auto text-white">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-gradient-to-tr from-violet-600 to-indigo-500 rounded-2xl shadow-lg shadow-violet-500/30 text-white">
+                    <i data-lucide="check-square" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-indigo-100 to-violet-300 bg-clip-text text-transparent">To-Do List</h1>
+                    <p class="text-xs text-indigo-200/70 font-medium">Stay organized and productive</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="relative mb-6">
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <div class="relative flex-1">
+                    <i data-lucide="edit-3" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-violet-300/60"></i>
+                    <input 
+                        type="text" 
+                        id="input-box" 
+                        placeholder="Add a new task..." 
+                        class="w-full pl-12 pr-4 py-3.5 bg-slate-950/40 border border-violet-500/20 rounded-2xl text-sm text-white placeholder-indigo-200/40 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/30 transition-all shadow-inner"
+                        onkeypress="handleKeyPress(event)"
+                    >
+                </div>
+                <button 
+                    onclick="addTask()" 
+                    class="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-violet-600/30 hover:shadow-violet-600/50 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm"
+                >
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Add</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Counter Bar -->
+        <div class="flex items-center justify-between text-xs text-indigo-200/70 font-semibold mb-4 px-1">
+            <div class="flex items-center gap-1.5">
+                <i data-lucide="list-todo" class="w-4 h-4 text-violet-400"></i>
+                <span id="task-counter">0 tasks remaining</span>
+            </div>
+            <button 
+                onclick="clearAllTasks()" 
+                id="clear-all-btn"
+                class="hover:text-rose-400 transition-colors hidden flex items-center gap-1"
+            >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear All
+            </button>
+        </div>
+
+        <!-- Task List Container -->
+        <ul id="list-container" class="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+            <!-- Dynamic task items will be injected here -->
+        </ul>
+
+        <!-- Empty State View -->
+        <div id="empty-state" class="py-12 text-center flex flex-col items-center justify-center">
+            <div class="w-16 h-16 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center text-violet-400 mb-3 shadow-inner">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
+            </div>
+            <p class="text-indigo-100 font-bold text-base">Your list is clean!</p>
+            <p class="text-xs text-indigo-200/50 mt-1 max-w-[220px]">Add tasks above to organize your day efficiently.</p>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // State Array for Tasks
+        let tasks = JSON.parse(localStorage.getItem("todo_tasks_data")) || [];
+
+        // DOM Elements Cache
+        const inputBox = document.getElementById("input-box");
+        const listContainer = document.getElementById("list-container");
+        const emptyState = document.getElementById("empty-state");
+        const taskCounter = document.getElementById("task-counter");
+        const clearAllBtn = document.getElementById("clear-all-btn");
+
+        window.onload = function() {
+            renderTasks();
+            lucide.createIcons();
+        };
+
+        // Keyboard Shortcut Handler
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                addTask();
+            }
+        }
+
+        function addTask() {
+            const taskText = inputBox.value.trim();
+
+            if (taskText === '') {
+                showToast("Please enter a valid task!", "warning");
+                return;
+            }
+
+            const newTask = {
+                id: 'task-' + Date.now(),
+                text: taskText,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            tasks.unshift(newTask);
+            inputBox.value = "";
+            saveData();
+            renderTasks();
+            showToast("Task added successfully!", "success");
+        }
+
+        function toggleTask(id) {
+            tasks = tasks.map(task => {
+                if (task.id === id) {
+                    const status = !task.completed;
+                    showToast(status ? "Task completed! Great job 🎉" : "Task marked active", status ? "success" : "info");
+                    return { ...task, completed: status };
+                }
+                return task;
+            });
+            saveData();
+            renderTasks();
+        }
+
+        function deleteTask(id, event) {
+            event.stopPropagation();
+            tasks = tasks.filter(task => task.id !== id);
+            saveData();
+            renderTasks();
+            showToast("Task deleted", "delete");
+        }
+
+        function clearAllTasks() {
+            if (tasks.length === 0) return;
+            tasks = [];
+            saveData();
+            renderTasks();
+            showToast("All tasks cleared", "delete");
+        }
+
+        function saveData() {
+            localStorage.setItem("todo_tasks_data", JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            listContainer.innerHTML = "";
+
+            if (tasks.length === 0) {
+                emptyState.classList.remove("hidden");
+                clearAllBtn.classList.add("hidden");
+                taskCounter.innerText = "0 tasks remaining";
+            } else {
+                emptyState.classList.add("hidden");
+                clearAllBtn.classList.remove("hidden");
+
+                const remainingCount = tasks.filter(t => !t.completed).length;
+                taskCounter.innerText = `${remainingCount} task${remainingCount === 1 ? '' : 's'} remaining`;
+
+                tasks.forEach(task => {
+                    const li = document.createElement("li");
+                    li.className = `animate-task flex items-center justify-between p-4 bg-slate-950/40 border border-white/5 hover:border-violet-500/30 rounded-2xl cursor-pointer group transition-all duration-200 ${task.completed ? 'completed-task opacity-60' : ''}`;
+                    li.onclick = () => toggleTask(task.id);
+
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3.5 min-w-0 flex-1 pr-2">
+                            <div class="custom-check w-6 h-6 rounded-xl border-2 ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-violet-400/40 group-hover:border-violet-400'} flex items-center justify-center flex-shrink-0">
+                                ${task.completed ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                            </div>
+                            <span class="task-text text-sm font-semibold text-slate-100 break-words leading-relaxed flex-1">
+                                ${escapeHtml(task.text)}
+                            </span>
+                        </div>
+                        <button 
+                            onclick="deleteTask('${task.id}', event)" 
+                            class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                            title="Delete Task"
+                        >
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    `;
+
+                    listContainer.appendChild(li);
+                });
+            }
+
+            lucide.createIcons();
+        }
+
+        function showToast(message, type = "info") {
+            const toast = document.getElementById("toast");
+            const toastMessage = document.getElementById("toast-message");
+            const toastIcon = document.getElementById("toast-icon");
+
+            toastMessage.innerText = message;
+
+            if (type === "warning") {
+                toastIcon.setAttribute("data-lucide", "alert-circle");
+                toastIcon.className = "w-5 h-5 text-amber-400";
+            } else if (type === "success") {
+                toastIcon.setAttribute("data-lucide", "check-circle");
+                toastIcon.className = "w-5 h-5 text-emerald-400";
+            } else if (type === "delete") {
+                toastIcon.setAttribute("data-lucide", "trash-2");
+                toastIcon.className = "w-5 h-5 text-rose-400";
+            } else {
+                toastIcon.setAttribute("data-lucide", "info");
+                toastIcon.className = "w-5 h-5 text-violet-400";
+            }
+
+            lucide.createIcons();
+
+            toast.classList.remove("translate-y-[-100px]", "opacity-0");
+
+            setTimeout(() => {
+                toast.classList.add("translate-y-[-100px]", "opacity-0");
+            }, 2500);
+        }
+
+        // Security Helper
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
